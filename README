@@ -1,0 +1,9 @@
+This is the LU Decomposition Benchmark program that I wrote for my research with the Wisconsin Multiscalar Group. I have tested this code on Intel core2 and AMD Barcelona machines. Other architectures may or may not be supported. This code is not actively maintained.
+
+
+Algorithm
+This code uses the Block LU Decomposition method to execute the matrix LU in parallel. More information on how a pipeline of these blocks is created can be found:
+
+http://en.wikipedia.org/wiki/Block_LU_decomposition
+
+Note: This code is not actively maintained or supported.
