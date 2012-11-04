@@ -18,9 +18,8 @@
 #define path "src"
 #define DS '/'
 
+//to turn debugging on, set to 1 or 2
 #define DEBUG 0
-//#define DEBUG 1
-//#define DEBUG 2
 
 
 
@@ -40,15 +39,14 @@ int main(int argc, char *argv[])
   int numThreads = atoi(argv[3]);
   int numRuns = 3;
   int blockSize = atoi(argv[2]);
-  //int numBlocks = 3;
   int numBlocks = 1;
 
- 
+
   int midRange = ((int) ceil(sqrt(matrixSize)));
   int startRange = (int) midRange/2;
   int endRange = (int) midRange*2;
 
-  
+
 
   if(DEBUG > 0){  
     cout << "matrixSize: " << matrixSize <<  endl;
@@ -60,11 +58,11 @@ int main(int argc, char *argv[])
 
   char cwd[MAXPATHLEN]; 
   getcwd(cwd, MAXPATHLEN);
-  
+
   if (!system(NULL)) 
     exit (1);
- 
-  
+
+
   system("rm -f results.txt");
   system("touch results.txt");
   ostringstream stringStream;
@@ -78,17 +76,7 @@ int main(int argc, char *argv[])
   //                        [runnumber] = timevalue
   //vector< vector < vector <int> > > values; 
   map<int, map<int, map<int, int> > > values;
-  
-  
-  /*
-  values.resize(numthreads);
-  for(int i = 0; i <= numthreads; ++i){
-    
-    //this may need to change later
-    values[i].resize();
-  
-  }
-  */
+
   for(int i = 0; i <numThreads; ++i){
     map < int, map<int, int> > tempMap1; 
     values[i] =  tempMap1; 
@@ -96,83 +84,71 @@ int main(int argc, char *argv[])
       map< int , int> tempMap2; 
       values[i][j] =  tempMap2; 
       for(int k = 0; k < numRuns; ++k){
-	values[i][j][k] =  0;
+        values[i][j][k] =  0;
       }
     }
   }
 
 
- 
+
   for(int i = 0; i <numThreads; ++i){
     for(int j = 0; j < numBlocks; ++j){
       for(int k = 0; k < numRuns; ++k){
-	stringStream.str("");
-	
-	//threads can't be 0
-	stringStream<<"PROMETHEUS_THREADS="<< (i+1);
-	cmd = stringStream.str();
-	if(DEBUG == 2)
-	  cout<<cmd<<endl;  
-	
-	char * writable = new char[cmd.size() + 1];
-	std::copy(cmd.begin(), cmd.end(), writable);
-	writable[cmd.size()] = '\0'; // don't forget the terminating 0
-	putenv(writable);
-	
-	system("rm -f out.txt");
-	stringStream.str("");
-	
-	stringStream<<"matrix_ss ";
-	//stringStream<< argv[1] <<" 32  > out.txt";
-	stringStream<< matrixSize <<" "<< blockSize<<" > out.txt";
-	//stringStream<< argv[1] <<" "<< ( startRange * ( pow (2, (j+1)) )) <<"  > out.txt";
-	//stringStream<< argv[1] <<" "<< (startRange *(j+1)) <<" > out.txt";
-	cmd = stringStream.str();
-	if(DEBUG == 2)
-	  cout << cmd << endl;
-	
-	system(cmd.c_str());
-	
-	stringStream.str("");
-	string temp1, temp2;
-	
-	temp1 = getStdoutFromCommand("cat out.txt | grep \"num_threads\" | awk -F'=' '{print $2}'");
-	temp2 = getStdoutFromCommand("cat out.txt | grep \"Took\" | awk '{print $2}'");
-	
-	
-	int a; 
-	//a = i + 1;
-	a = atoi(temp1.c_str());
-	/*
-	if(a != (i+1)){
-	  cerr << "ERROR"<<endl;
-	  exit(1);
-	}	
-	*/
+        stringStream.str("");
 
-	int b = atoi(temp2.c_str());
-	
-	values[i][j][k] = b;
-	//values[a].push_back(b);
-	delete[] writable;
+        //threads can't be 0
+        stringStream<<"PROMETHEUS_THREADS="<< (i+1);
+        cmd = stringStream.str();
+        if(DEBUG == 2)
+          cout<<cmd<<endl;  
+
+        char * writable = new char[cmd.size() + 1];
+        std::copy(cmd.begin(), cmd.end(), writable);
+        writable[cmd.size()] = '\0'; // don't forget the terminating 0
+        putenv(writable);
+
+        system("rm -f out.txt");
+        stringStream.str("");
+
+        stringStream<<"matrix_ss ";
+        stringStream<< matrixSize <<" "<< blockSize<<" > out.txt";
+        cmd = stringStream.str();
+        if(DEBUG == 2)
+          cout << cmd << endl;
+
+        system(cmd.c_str());
+
+        stringStream.str("");
+        string temp1, temp2;
+
+        temp1 = getStdoutFromCommand("cat out.txt | grep \"num_threads\" | awk -F'=' '{print $2}'");
+        temp2 = getStdoutFromCommand("cat out.txt | grep \"Took\" | awk '{print $2}'");
+
+
+        int a; 
+        a = atoi(temp1.c_str());
+        int b = atoi(temp2.c_str());
+
+        values[i][j][k] = b;
+        delete[] writable;
       }
     }
   } 
 
-  
-  
 
 
-   if(DEBUG > 0){
+
+
+  if(DEBUG > 0){
     for(int i = 0; i <numThreads; ++i){
       for(int j = 0; j < numBlocks; ++j){
-	for(int k = 0; k < numRuns; ++k){
-	  cout << "values["<<i<<"]["<< j <<"]["<<k<<"]: " << values[i][j][k] << endl;
-	}
+        for(int k = 0; k < numRuns; ++k){
+          cout << "values["<<i<<"]["<< j <<"]["<<k<<"]: " << values[i][j][k] << endl;
+        }
       }
     } 
-   }
- 
+  }
+
   map < int, map <int , double> > averages;
   for(int i =0; i < numThreads; ++i){
     map< int, double > tempMap;
@@ -181,12 +157,12 @@ int main(int argc, char *argv[])
       averages[i][j] = 0.0;
     }
   }
-  
+
   for(int i =0; i < numThreads; ++i){
     for(int j=0; j < numBlocks ; ++j){
       double sum = 0.0;
       for(int k = 0; k < numRuns; ++k){
-	sum +=  values[i][j][k];
+        sum +=  values[i][j][k];
       }
       averages[i][j] = ((long double)sum / numRuns);
     }
@@ -194,12 +170,12 @@ int main(int argc, char *argv[])
 
   for(int i = 0; i <numThreads; ++i){
     for(int j = 0; j < numBlocks; ++j){
-    	cout << "averages["<<i+1<<"]["<< j <<"]: " << averages[i][j] << endl;
+      cout << "averages["<<i+1<<"]["<< j <<"]: " << averages[i][j] << endl;
     }
   }
   system("rm -f results.txt out.txt"); 
   return 1;
- 
+
 }
 
 std::string getStdoutFromCommand(std::string cmd) {

@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <string>
 #include <getopt.h>
-
+#include <cassert>
 #define NUM_TIMES (1)
 float marginErr = 1e-10f;
 
@@ -39,8 +39,16 @@ void getoptions (int argc, char **argv);
 void test1();
 //void verifyTest1();
 
+int randGen(int tMin,int tMax){
+  int f;
+  f= 0;
+  while(f ==0)
+    f =  rand() % (int) tMax;
+  return f;
+}
 
-//generate random num
+//use this if Boost is installed only
+/*
 template<typename T>
 T randGen(T tMin,T tMax){
   T f;
@@ -58,7 +66,7 @@ T randGen(T tMin,T tMax){
   }
   return f;
 }
-
+*/
 
 using namespace std;
 double 
@@ -194,19 +202,19 @@ test1(){
       for(int j= 0 ; j < matrixSize; ++j){
 	if(i == j){
 	  Lm->setElement(i, j,Element( (double) 1.0 ));
-	  Um->setElement(i, j,Element( (double) randGen<int>(-20, 20)));
+	  Um->setElement(i, j,Element( (double) randGen(-20, 20)));
 	}
 	else if(i < j){
 	  Lm->setElement(i, j,Element( (double) 0. ));
-	  Um->setElement(i, j,Element( (double) randGen<int>(-20, 20)));
+	  Um->setElement(i, j,Element( (double) randGen(-20, 20)));
 	}
 	else{
-	  Lm->setElement(i, j,Element( (double) randGen<int>(-20, 20)));
+	  Lm->setElement(i, j,Element( (double) randGen(-20, 20)));
 	  Um->setElement(i, j,Element( (double) 0. ));
 	}
       
-	LUm->setElement(i, j,Element( (double) randGen<int>(-20, 20)));
-	Lm->setElement(i, j,Element( (double) randGen<int>(-20, 20)));
+	LUm->setElement(i, j,Element( (double) randGen(-20, 20)));
+	Lm->setElement(i, j,Element( (double) randGen(-20, 20)));
       }
     }
   }

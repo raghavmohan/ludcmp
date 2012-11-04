@@ -7,7 +7,6 @@
 #include <iostream>
 #include <cstdio>
 #include <cmath>
-#include <boost/math/special_functions/fpclassify.hpp>
 #include <vector>
 #include <set>
 
