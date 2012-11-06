@@ -10,10 +10,6 @@
 #include <vector>
 #include <set>
 
-#ifndef SS_CPP_ONLY
-#include "parakram.hpp"
-#endif
-
 #ifndef max
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #endif
@@ -106,15 +102,7 @@ MGetSetArgsSet *  MGetSetArgsSetToFree;
 typedef set< Matrix * > MatrixSet;
 MatrixSet * matricesToFree;
 
-#ifndef SS_CPP_ONLY
-typedef set< prometheus::obj_set_t * > ObjSet;
-ObjSet * objsToFree;
-#endif
-
 class Matrix
-#ifndef SS_CPP_ONLY
-: public prometheus::static_xact_t
-#endif
 {
 private:
   Element ** array;
@@ -221,13 +209,6 @@ public:
 
 //other static functions
 void getSetElement(MGetSetArgs* getSetArgs);
-
-#ifndef SS_CPP_ONLY
-void execLU(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg); 
-void execMInverse(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg);
-void execMOp(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg); 
-void execMGetSet(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg);
-#endif
 
 void getPassArray(Element ** original, Element ** arrayToPass, int expand,int expand2, int n);
 Element computeDeterminant(Element ** a, int n, int flag);

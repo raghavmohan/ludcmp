@@ -296,114 +296,16 @@ void Matrix::blockLU(){
   matricesToFree->insert(L00inv);
 
   //start computation after setup
-#ifndef SS_CPP_ONLY
-  //---------------------------------------------------------//
-  prometheus::begin_nest();
-  //--------------------------------------------------------//
-
-  
-  prometheus::obj_set_t * writesetLU = new  prometheus::obj_set_t();
-  prometheus::obj_set_t * readsetLU = new  prometheus::obj_set_t();	
-  objsToFree->insert(writesetLU);
-  objsToFree->insert(readsetLU);
-	  
-  writesetLU->insert(Ls[0][0]);
-  writesetLU->insert(Us[0][0]);
-    
-  readsetLU->insert(matrixBlocks[0][0]);
-  
-  //careful - declaring on stack...
-  BlockLUArgs args;
-  args.LUm = matrixBlocks[0][0]; args.Lm = Ls[0][0];args.Um = Us[0][0];
-   
-  df_execute(writesetLU, readsetLU, &execLU, (void*) &args);
-
-#else
   (matrixBlocks[0][0])->Doolittle(Ls[0][0],Us[0][0]);
-#endif
 
-#ifndef SS_CPP_ONLY 
-  prometheus::obj_set_t * writesetInvL = new  prometheus::obj_set_t();
-  prometheus::obj_set_t * readsetInvL = new  prometheus::obj_set_t();	
-  objsToFree->insert(writesetInvL);
-  objsToFree->insert(readsetInvL);
-  
-
-  readsetInvL->insert(Ls[0][0]); 
-  writesetInvL->insert(L00inv);
-  
- 
-    
-  MInverseArgs invArgsL;
-  invArgsL.passM = Ls[0][0]; invArgsL.resultM = L00inv ;invArgsL.flag =1;   
-  df_execute(writesetInvL, readsetInvL, &execMInverse, (void*) &invArgsL);
-
-  prometheus::obj_set_t * writesetInvU = new  prometheus::obj_set_t();
-  prometheus::obj_set_t * readsetInvU = new  prometheus::obj_set_t();	
-  objsToFree->insert(writesetInvU);
-  objsToFree->insert(readsetInvU);
-
-	  
-  readsetInvU->insert(Us[0][0]); 
-  writesetInvU->insert(U00inv);
-
- 
-    
-  MInverseArgs invArgsU;
-  invArgsU.passM = Us[0][0]; invArgsU.resultM = U00inv ;invArgsU.flag =2;   
-  df_execute(writesetInvU, readsetInvU, &execMInverse, (void*) &invArgsU);
-#else
   getTriangularInverse(Ls[0][0], L00inv, 1);
   getTriangularInverse(Us[0][0], U00inv, 2); 
-#endif
   
  
   for(int i = 1; i < bigRowSize; ++i){  
     //compute L[i][0] && U[0][i]   
-#ifndef SS_CPP_ONLY
-    prometheus::obj_set_t * writesetMulL = new  prometheus::obj_set_t();
-    prometheus::obj_set_t * readsetMulL= new  prometheus::obj_set_t();	
-    objsToFree->insert(writesetMulL);
-    objsToFree->insert(readsetMulL);
-    
-   
-    readsetMulL->insert(U00inv); 
-    readsetMulL->insert((matrixBlocks[i][0])); 
-    writesetMulL->insert((Ls[i][0]));
-  
-    MOpArgs * mMulArgsL = new MOpArgs;
-  
-    MOpArgsSetToFree->insert(mMulArgsL);
-    mMulArgsL->result  = (Ls[i][0]) ; 
-    mMulArgsL->M1 = (matrixBlocks[i][0]) ; 
-    mMulArgsL->M2 = U00inv;
-    mMulArgsL->type = ElementOp::MUL;
-
-    df_execute(writesetMulL, readsetMulL, &execMOp, (void*) mMulArgsL);
-    
-    prometheus::obj_set_t * writesetMulU = new  prometheus::obj_set_t();
-    prometheus::obj_set_t * readsetMulU = new  prometheus::obj_set_t();	
-    objsToFree->insert(writesetMulU);
-    objsToFree->insert(readsetMulU);
-
-    readsetMulU->insert(L00inv); 
-    readsetMulU->insert( (matrixBlocks[0][i]) ); 
-    writesetMulU->insert((Us[0][i])); 
-    
-    MOpArgs * mMulArgsU = new MOpArgs;
-    
-    MOpArgsSetToFree->insert(mMulArgsU);
-    mMulArgsU->result  = (Us[0][i]); 
-    mMulArgsU->M1 = L00inv; 
-    mMulArgsU->M2 = (matrixBlocks[0][i]);
-    mMulArgsU->type = ElementOp::MUL;
-    
-    df_execute(writesetMulU, readsetMulU, &execMOp, (void*) mMulArgsU);
-
-#else
     Ls[i][0]->multiply(matrixBlocks[i][0], U00inv);
     Us[0][i]->multiply(L00inv,matrixBlocks[0][i]);
-#endif
   }
   
 
@@ -427,180 +329,35 @@ void Matrix::blockLU(){
 	//end case 
 	if(( (i == bigRowSize && j == bigColSize) &&(k != (bigRowSize - 1) ) ) || (!(i == k && j == k)) ) {
 
-#ifndef SS_CPP_ONLY
-	  prometheus::obj_set_t * writesetMulTemp2 = new  prometheus::obj_set_t();
-	  prometheus::obj_set_t * readsetMulTemp2 = new  prometheus::obj_set_t();	
-	  objsToFree->insert(writesetMulTemp2);
-	  objsToFree->insert(readsetMulTemp2);
-	  
-	  readsetMulTemp2->insert(Ls[i][k]); 
-	  readsetMulTemp2->insert(Us[k][j]); 
-	  writesetMulTemp2->insert(temp2); 
-    
-	  MOpArgs * mMulArgsTemp2 = new MOpArgs;
-    
-	  MOpArgsSetToFree->insert(mMulArgsTemp2);
-	  mMulArgsTemp2->result  = (temp2); 
-	  mMulArgsTemp2->M1 = (Ls[i][k]); 
-	  mMulArgsTemp2->M2 = (Us[k][j]);
-	  mMulArgsTemp2->type = ElementOp::MUL;
-    
-	  df_execute(writesetMulTemp2, readsetMulTemp2, &execMOp, (void*) mMulArgsTemp2);
-	    
-	  prometheus::obj_set_t * writesetMulTemp1 = new  prometheus::obj_set_t();
-	  prometheus::obj_set_t * readsetMulTemp1 = new  prometheus::obj_set_t();	
-	  objsToFree->insert(writesetMulTemp1);
-	  objsToFree->insert(readsetMulTemp1);
-
-
-	  //readsetMulTemp1->insert(Ls[i][k]); 
-	  readsetMulTemp1->insert(temp2); 
-	  writesetMulTemp1->insert(temp1); 
-   
-	  MOpArgs * mMulArgsTemp1 = new MOpArgs;
-    
-	  MOpArgsSetToFree->insert(mMulArgsTemp1);
-	  mMulArgsTemp1->result  = (temp1); 
-	  mMulArgsTemp1->M1 = (temp1); 
-	  mMulArgsTemp1->M2 = (temp2);
-	  mMulArgsTemp1->type = ElementOp::SUB;
-    
-	  df_execute(writesetMulTemp1, readsetMulTemp1, &execMOp, (void*) mMulArgsTemp1);
-#else
 	  temp2->multiply(Ls[i][k], Us[k][j]);
 	  temp1->subtract(temp1, temp2);
 	  //(*temp2) = ( *(Ls[i][k])) * (*(Us[k][j]));
 	  //(*temp1) -= (*temp2) ; 
-#endif
 	}
       }
 
       if(i == j){
 	
-#ifndef SS_CPP_ONLY
-
-	prometheus::obj_set_t * writesetLU2 = new  prometheus::obj_set_t();
-	prometheus::obj_set_t * readsetLU2 = new  prometheus::obj_set_t();	
-	objsToFree->insert(writesetLU2);
-	objsToFree->insert(readsetLU2);
-	
-
-	readsetLU2->insert(temp1);
-    
-	writesetLU2->insert(temp1);
-	
-	writesetLU2->insert(Ls[i][j]);
-	writesetLU2->insert(Us[i][j]);
-    
-	BlockLUArgs *  args2 = new BlockLUArgs;
-	MLUArgsSetToFree->insert(args2);
-	args2->LUm = temp1; 
-	args2->Lm = Ls[i][j];
-	args2->Um = Us[i][j];
-   
-	df_execute(writesetLU2, readsetLU2, &execLU, (void*) args2);
-
-#else
 	temp1->Doolittle( Ls[i][j], Us[i][j]);
-#endif
       }
 
       
       else if(i > j){
 	
-#ifndef SS_CPP_ONLY 
-	prometheus::obj_set_t * writesetInvU2 = new  prometheus::obj_set_t();
-	prometheus::obj_set_t * readsetInvU2 = new  prometheus::obj_set_t();	
-	objsToFree->insert(writesetInvU2);
-	objsToFree->insert(readsetInvU2);
-	
-	readsetInvU2->insert(Us[j][j]); 
-	writesetInvU2->insert(junk);
-  
-	MInverseArgs * invArgsU2 = new MInverseArgs;
-	MInvArgsSetToFree->insert(invArgsU2);
-	invArgsU2->passM = Us[j][j]; 
-	invArgsU2->resultM = junk;
-	invArgsU2->flag = 2;   
-	df_execute(writesetInvU2, readsetInvU2, &execMInverse, (void*) invArgsU2);
-
-	prometheus::obj_set_t * writesetMulJunk1 = new  prometheus::obj_set_t();
-	prometheus::obj_set_t * readsetMulJunk1 = new  prometheus::obj_set_t();	
-	objsToFree->insert(writesetMulJunk1);
-	objsToFree->insert(readsetMulJunk1);
-	
-	readsetMulJunk1->insert(temp1); 
-	readsetMulJunk1->insert(junk); 
-	writesetMulJunk1->insert(Ls[i][j]); 
-    
-	MOpArgs * mMulArgsJunk1 = new MOpArgs;
-    
-	MOpArgsSetToFree->insert(mMulArgsJunk1);
-	mMulArgsJunk1->result  = (Ls[i][j]); 
-	mMulArgsJunk1->M1 = (temp1); 
-	mMulArgsJunk1->M2 = (junk);
-	mMulArgsJunk1->type = ElementOp::MUL;
-    
-	df_execute(writesetMulJunk1, readsetMulJunk1, &execMOp, (void*) mMulArgsJunk1);
-	
-#else
 	getTriangularInverse(Us[j][j], junk, 2);
 	Ls[i][j]->multiply(temp1, junk);
 	// *(Ls[i][j]) = (*temp1) *(*(junk));
-#endif
       }
 
 
       else{
-#ifndef SS_CPP_ONLY 
-	prometheus::obj_set_t * writesetInvL2 = new  prometheus::obj_set_t();
-	prometheus::obj_set_t * readsetInvL2 = new  prometheus::obj_set_t();	
-	objsToFree->insert(writesetInvL2);
-	objsToFree->insert(readsetInvL2);
-
-
-	readsetInvL2->insert(Ls[i][i]); 
-	writesetInvL2->insert(junk);
-  
-	MInverseArgs * invArgsL2 = new MInverseArgs;
-	MInvArgsSetToFree->insert(invArgsL2);
-	invArgsL2->passM = Ls[i][i]; 
-	invArgsL2->resultM = junk;
-	invArgsL2->flag =1;   
-	df_execute(writesetInvL2, readsetInvL2, &execMInverse, (void*) invArgsL2);
-
-	prometheus::obj_set_t * writesetMulJunk2 = new  prometheus::obj_set_t();
-	prometheus::obj_set_t * readsetMulJunk2 = new  prometheus::obj_set_t();	
-	objsToFree->insert(writesetMulJunk2);
-	objsToFree->insert(readsetMulJunk2);
-	
-	readsetMulJunk2->insert(temp1); 
-	readsetMulJunk2->insert(junk); 
-	writesetMulJunk2->insert(Us[i][j]); 
-    
-	MOpArgs * mMulArgsJunk2 = new MOpArgs;
-    
-	MOpArgsSetToFree->insert(mMulArgsJunk2);
-	mMulArgsJunk2->result  = (Us[i][j]); 
-	mMulArgsJunk2->M1 = (junk); 
-	mMulArgsJunk2->M2 = (temp1);
-	mMulArgsJunk2->type = ElementOp::MUL;
-    
-	df_execute(writesetMulJunk2, readsetMulJunk2, &execMOp, (void*) mMulArgsJunk2);
-	
-#else
 		
 	getTriangularInverse(Ls[i][i], junk, 1);
 	(Us[i][j])->multiply(junk, temp1);
-#endif
       }
 
     }
   }
-
-#ifndef SS_CPP_ONLY
-  prometheus::end_nest();
-#endif
 }
 
 void Matrix::getBlockResults(Matrix *Lresult, Matrix * Uresult){
@@ -1066,49 +823,3 @@ Element computeDeterminant(Element ** a, int n, int flag){
   return result;
 }
 
-
-
-#ifndef SS_CPP_ONLY
-void execLU(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg)
-{
-  BlockLUArgs* blockLUArgs = (BlockLUArgs* )arg;
-  (blockLUArgs->LUm)->Doolittle((blockLUArgs->Lm),(blockLUArgs->Um));
-}
-
-
-void execMInverse(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg)
-{  
-  MInverseArgs* mInvArgs = (MInverseArgs* )arg;
-  getTriangularInverse(mInvArgs->passM, mInvArgs->resultM, mInvArgs->flag);
-}
-
-
-void execMGetSet(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg)
-{
-  MGetSetArgs* getSetArgs = (MGetSetArgs * )arg;
-  getSetElement(getSetArgs);
-}
-
-
-void execMOp(prometheus::obj_set_t *wr_set, prometheus::obj_set_t *rd_set, void * arg)
-{ 
-  MOpArgs * mOpArgs = (MOpArgs* )arg;
-  switch(mOpArgs->type){
-  case ElementOp::MUL:
-    //*(mOpArgs->result) = ( (*(mOpArgs->M1)) * ( *(mOpArgs->M2) ) ); 
-    mOpArgs->result->multiply(mOpArgs->M1, mOpArgs->M2);
-    break;
-  case ElementOp::SUB:
-    //*(mOpArgs->result) = ( (*(mOpArgs->M1)) - ( *(mOpArgs->M2) ) );
-    mOpArgs->result->subtract(mOpArgs->M1, mOpArgs->M2);
-    break;
-  case ElementOp::EQ:
-    //*(mOpArgs->result) = ( (*(mOpArgs->M1)) - ( *(mOpArgs->M2) ) );
-    (*(mOpArgs->result)) =(* (mOpArgs->M1));
-    break;
-  
-  default:
-    break;
-  }
-}
-#endif

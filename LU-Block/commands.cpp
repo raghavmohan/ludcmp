@@ -97,7 +97,6 @@ int main(int argc, char *argv[])
         stringStream.str("");
 
         //threads can't be 0
-        stringStream<<"PROMETHEUS_THREADS="<< (i+1);
         cmd = stringStream.str();
         if(DEBUG == 2)
           cout<<cmd<<endl;  
